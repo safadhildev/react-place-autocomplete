@@ -131,6 +131,15 @@ const Form = ({ onSelect }) => {
               loading={loading}
             />
           </AutoComplete>
+          <Space wrap>
+            <Button
+              style={{ padding: 0 }}
+              type="link"
+              onClick={handleGetMyLocation}
+            >
+              Get my location
+            </Button>
+          </Space>
         </Layout>
 
         {showOptions && <Space></Space>}
