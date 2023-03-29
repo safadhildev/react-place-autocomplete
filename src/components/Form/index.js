@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { RightOutlined } from "@ant-design/icons";
 import {
   AutoComplete,
   Button,
@@ -9,88 +9,31 @@ import {
   Tag,
   Typography,
 } from "antd";
-import { LeftOutlined, RightOutlined } from "@ant-design/icons";
 import PropTypes from "prop-types";
-import classNames from "classnames";
-
-import "./Form.css";
-import { fetchPlaces } from "../../api";
-
-const styles = {
-  input: { flex: 1, fontSize: "16px" },
-  button: {
-    margin: "0 0 0 10px",
-  },
-  tag: {
-    margin: "30px 0 10px",
-  },
-  form: {
-    container: {
-      position: "absolute",
-      top: 10,
-      left: 10,
-      zIndex: 1,
-      "box-shadow": "0px 0px 5px -1px rgba(0,0,0,0.1)",
-      "-webkit-box-shadow": "0px 0px 5px -1px rgba(0,0,0,0.1)",
-      "-moz-box-shadow": "0px 0px 5px -1px rgba(0,0,0,0.1)",
-    },
-    wrapper: {
-      flex: 1,
-      backgroundColor: "white",
-      width: "400px",
-      display: "flex",
-      flexDirection: "row",
-    },
-  },
-
-  result: {
-    wrapper: {
-      flex: 1,
-      backgroundColor: "white",
-      width: "400px",
-      display: "flex",
-      flexDirection: "column",
-      gap: 0,
-    },
-    container: {
-      position: "absolute",
-      top: 90,
-      left: 10,
-      zIndex: 1,
-      "box-shadow": "0px 0px 5px -1px rgba(0,0,0,0.2)",
-      "-webkit-box-shadow": "0px 0px 5px -1px rgba(0,0,0,0.2)",
-      "-moz-box-shadow": "0px 0px 5px -1px rgba(0,0,0,0.2)",
-    },
-    title: {
-      fontSize: "20px",
-      fontWeight: "bold",
-    },
-    subtitle: {
-      fontSize: "14px",
-      display: "flex",
-      flexDirection: "row",
-      flexShrink: 1,
-    },
-    subtitle_bold: {
-      fontSize: "14px",
-      fontWeight: "bold",
-      flexWrap: "wrap",
-      flexShrink: 1,
-      width: "200px",
-      backgroundColor: "red",
-    },
-  },
-};
+import { useDispatch, useSelector } from "react-redux";
+import { getPlacesRequest } from "../../providers/actions/Place";
+import React, { useState } from "react";
+import styles from "./styles";
 
 const Form = ({ onSelect }) => {
+  const dispatch = useDispatch();
   const [value, setValue] = useState("");
-  const [places, setPlaces] = useState([]);
+
   const [showOptions, setShowOptions] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState(null);
 
+  const { placesData, loading, error, message } = useSelector((state) => {
+    return {
+      placesData: state.placeReducer.places.data,
+      loading: state.placeReducer.places.loading,
+      error: state.placeReducer.places.error,
+      message: state.placeReducer.places.message,
+    };
+  });
+
   const handleSelect = (id) => {
-    const placeData = places.find((item) => item?.place_id === id);
+    const placeData = placesData?.find((item) => item?.place_id === id);
     setValue(placeData?.formatted_address);
     setSelectedPlace(placeData);
     onSelect(placeData);
@@ -109,28 +52,14 @@ const Form = ({ onSelect }) => {
   };
 
   const handleSearch = async () => {
-    try {
-      const res = await fetchPlaces({ input: value, radius: 500 });
-      console.log("[DEBUG] :: ", { res });
-      const { status, data } = res;
-      if (status === 200) {
-        const formattedPredictions = data?.results?.map((item) => ({
-          ...item,
-          value: item?.place_id,
-          label: item?.formatted_address,
-        }));
-        setPlaces(formattedPredictions);
-      }
-    } catch (err) {
-      console.log(err);
-    }
+    dispatch(getPlacesRequest({ input: value, radius: 500 }));
   };
+
+  const handleGetMyLocation = () => {};
 
   const toggleMinimize = () => {
     setMinimized(!minimized);
   };
-
-  const onShowOptions = () => {};
 
   if (minimized) {
     return (
@@ -186,7 +115,7 @@ const Form = ({ onSelect }) => {
       <Card style={styles.form.container} size="small">
         <Layout style={styles.form.wrapper}>
           <AutoComplete
-            options={value && places}
+            options={value && placesData}
             style={styles.input}
             onSelect={handleSelect}
             onSearch={handleSearch}
@@ -199,16 +128,9 @@ const Form = ({ onSelect }) => {
               size="large"
               placeholder="Search"
               allowClear
+              loading={loading}
             />
           </AutoComplete>
-          {/* <Button
-            style={styles.button}
-            type="primary"
-            size="large"
-            onClick={onShowOptions}
-          >
-            More
-          </Button> */}
         </Layout>
 
         {showOptions && <Space></Space>}
